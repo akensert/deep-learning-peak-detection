@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+from tqdm import tqdm
 
 
 def gaussian_peak(x, amplitude, loc, scale):
@@ -6,6 +8,8 @@ def gaussian_peak(x, amplitude, loc, scale):
 
 def asymmetrical_gaussian_peak(x, amplitude, loc, scale, asymmetry):
     # assymetrical_gaussian_peak(..., assymetry=0) is the same as gaussian_peak(...)
+    # add additional asymmetries by adding to the denominator inside np.exp:
+    #   scale + asymmetry*(x-loc) + asymmetry*(x-loc)**2 ...,
     return amplitude * np.exp(-1/2*((x - loc)/(scale + asymmetry*(x - loc)))**2)
 
 def apply_white_noise(chromatogram, apices, signal_to_noise_ratio):
@@ -35,7 +39,7 @@ def apply_pink_noise(chromatogram, apices, signal_to_noise_ratio, num_sources=6)
     noise = (apices.mean() / signal_to_noise_ratio) * noise / 2
     return chromatogram + noise
 
-def apply_basline_drift(chromatogram, resolution):
+def apply_baseline_drift(chromatogram, resolution):
 
     def sigmoid(x, a, b, multiplier):
         return 1 / (1 + np.exp( - (x * a + b) )) * multiplier
@@ -55,14 +59,14 @@ class Simulator:
 
     def __init__(
         self,
-        resolution,
-        num_peaks_range,
-        snr_range,
-        amplitude_range,
-        loc_range,
-        scale_range,
-        asymmetry_range,
-        pink_noise_prob
+        resolution=16384,
+        num_peaks_range=(1, 100),
+        snr_range=(5.0, 20.0),
+        amplitude_range=(25, 250),
+        loc_range=(0.05, 0.95),
+        scale_range=(0.001, 0.003),
+        asymmetry_range=(-0.1, 0.1),
+        noise_type='white',
     ):
         self.resolution = resolution
         self.num_peaks_range = num_peaks_range
@@ -71,11 +75,24 @@ class Simulator:
         self.loc_range = loc_range
         self.scale_range = scale_range
         self.asymmetry_range = asymmetry_range
-        self.pink_noise_prob = pink_noise_prob
 
-    def generate(self, random_state):
+        if noise_type == 'white':
+            self.apply_baseline_noise = apply_white_noise
+        elif noise_type == 'pink':
+            self.apply_baseline_noise = apply_pink_noise
+        else:
+            raise ValueError(f"noise_type '{noise_type}' not in list of " +
+                              "available noise types: ['white', 'pink']")
 
-        np.random.seed(random_state)
+    def sample(self, indices, verbose=0):
+        if verbose:
+            indices = tqdm(indices)
+        for i in indices:
+            yield self._generate(i)
+
+    def _generate(self, random_seed):
+
+        np.random.seed(random_seed)
 
         # Randomly obtain parameters of the peaks
         num_peaks = np.random.randint(*self.num_peaks_range)
@@ -95,14 +112,10 @@ class Simulator:
             chromatogram += peak
 
         # Apply pink noise or white noise to chromatogram
-        if self.pink_noise_prob > np.random.random():
-            chromatogram = apply_pink_noise(chromatogram, amplitudes, snr)
-        else:
-            chromatogram = apply_white_noise(chromatogram, amplitudes, snr)
+        chromatogram = self.apply_baseline_noise(chromatogram, amplitudes, snr)
 
         # Apply baseline drift to chromatogram
-        chromatogram = apply_basline_drift(chromatogram, self.resolution)
-        chromatogram =  chromatogram[:, None] # add dimension for Conv1D
+        chromatogram = apply_baseline_drift(chromatogram, self.resolution)
 
         return {
             'chromatogram': chromatogram,
