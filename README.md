@@ -34,4 +34,9 @@ for sample in test_samples:
   outputs.append(output)
 
 # Do additional stuff do obtain ROC-AUC and MRE values, which can be compared with CNN
+
+# Generate a single example (with random seed = 42):
+output = simulator._generate(42)
+# obtain chromatogram
+x = output['chromatogram']
 ```
