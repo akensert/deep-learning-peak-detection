@@ -16,6 +16,7 @@ def find_peaks(x_deriv, height=0.01, distance=30, width=None):
     keep_idx = np.where(x_deriv[loc] <= 0)[0]
     return loc[keep_idx]
 
+
 def savgol_filter(x, window_length=33, polyorder=2, deriv=0):
     '''
     Savitzky-Golay smoothing
