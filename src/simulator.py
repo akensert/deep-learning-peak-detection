@@ -48,7 +48,7 @@ def apply_baseline_drift(chromatogram, resolution):
     baseline_drift = np.zeros(resolution, dtype='float32')
     n = 10
     for _ in range(n):
-        multiplier = np.random.uniform(-500, 500)
+        multiplier = np.random.uniform(-100, 100)
         a = np.random.uniform(-20, 20)
         b = np.random.uniform(-20, 20)
         baseline_drift += sigmoid(x, a, b, multiplier) / n
