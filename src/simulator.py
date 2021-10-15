@@ -39,7 +39,7 @@ def apply_pink_noise(chromatogram, apices, signal_to_noise_ratio, num_sources=6)
     noise = (apices.mean() / signal_to_noise_ratio) * noise / 2
     return chromatogram + noise
 
-def apply_baseline_drift(chromatogram, resolution):
+def apply_baseline_drift(chromatogram, resolution, multiplier_range=(-100, 100)):
 
     def sigmoid(x, a, b, multiplier):
         return 1 / (1 + np.exp( - (x * a + b) )) * multiplier
@@ -48,7 +48,7 @@ def apply_baseline_drift(chromatogram, resolution):
     baseline_drift = np.zeros(resolution, dtype='float32')
     n = 10
     for _ in range(n):
-        multiplier = np.random.uniform(-100, 100)
+        multiplier = np.random.uniform(*multiplier_range)
         a = np.random.uniform(-20, 20)
         b = np.random.uniform(-20, 20)
         baseline_drift += sigmoid(x, a, b, multiplier) / n
@@ -61,7 +61,7 @@ class Simulator:
         self,
         resolution=16384,
         num_peaks_range=(1, 100),
-        snr_range=(5.0, 20.0),
+        snr_range=(10.0, 30.0),
         amplitude_range=(25, 250),
         loc_range=(0.05, 0.95),
         scale_range=(0.001, 0.003),
