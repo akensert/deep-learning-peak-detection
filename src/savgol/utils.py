@@ -13,18 +13,17 @@ def rescale_deriv(x_deriv):
 
     return x_deriv / np.max(np.abs(x_deriv))
 
-def find_peaks(x_deriv, height=0.01, distance=30, width=None):
+def find_peaks(x_deriv, height=0.05, distance=None, width=[16, 100]):
     '''
     Local minima search with scipy's find_peaks
     '''
     # use scipy's find_peaks to find local minima. Parameters probably
     # need some optimization.
     loc = scipy.signal.find_peaks(
-        -x_deriv, height=height, distance=distance, width=width)[0]
+        -x_deriv, height=height, distance=distance, width=width, rel_height=0.5)[0]
     # remove local minima which is above 0 (perhaps this has to be modified)
     keep_idx = np.where(x_deriv[loc] <= 0)[0]
     return loc[keep_idx]
-
 
 def savgol_filter(x, window_length=33, polyorder=2, deriv=0):
     '''
