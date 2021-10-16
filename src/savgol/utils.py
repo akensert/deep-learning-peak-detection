@@ -4,6 +4,15 @@ import scipy.linalg
 import scipy.sparse
 
 
+def rescale_deriv(x_deriv):
+    '''
+    Rescales inputted array by dividing arr with max(abs(array))
+    '''
+    if not isinstance(x_deriv, np.ndarray):
+        x_deriv = np.array(x_deriv)
+
+    return x_deriv / np.max(np.abs(x_deriv))
+
 def find_peaks(x_deriv, height=0.01, distance=30, width=None):
     '''
     Local minima search with scipy's find_peaks
