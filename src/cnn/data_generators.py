@@ -35,7 +35,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         for data in self.simulator.sample(batch_indices):
             y = self.label_encoder.encode(data['loc'], data['area'])
             x = data['chromatogram'][:, None]
-            x_batch.append(x)
+            x_batch.append(x / x.max())
             y_batch.append(y)
 
         return np.array(x_batch), np.array(y_batch)

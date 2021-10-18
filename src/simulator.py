@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import scipy.interpolate
 from tqdm import tqdm
 
 
@@ -39,7 +40,7 @@ def apply_pink_noise(chromatogram, apices, signal_to_noise_ratio, num_sources=6)
     noise = (apices.mean() / signal_to_noise_ratio) * noise / 2
     return chromatogram + noise
 
-def apply_baseline_drift(chromatogram, resolution, multiplier_range=(-100, 100)):
+def apply_baseline_drift(chromatogram, resolution, multiplier_range):
 
     def sigmoid(x, a, b, multiplier):
         return 1 / (1 + np.exp( - (x * a + b) )) * multiplier
@@ -54,6 +55,16 @@ def apply_baseline_drift(chromatogram, resolution, multiplier_range=(-100, 100))
         baseline_drift += sigmoid(x, a, b, multiplier) / n
     return chromatogram + baseline_drift
 
+def apply_interpolation(y, target_size):
+    '''
+    Resizes a chromatogram to a given size/resolution
+    '''
+    x = np.linspace(0, 1, len(y))
+    f = scipy.interpolate.interp1d(x, y)
+    xnew = np.linspace(0, 1, target_size)
+    ynew = f(xnew)
+    return ynew
+
 
 class Simulator:
 
@@ -66,6 +77,7 @@ class Simulator:
         loc_range=(0.05, 0.95),
         scale_range=(0.001, 0.003),
         asymmetry_range=(-0.15, 0.15),
+        baseline_drift_magnitude=(-100, 100),
         noise_type='white',
     ):
         self.resolution = resolution
@@ -75,6 +87,7 @@ class Simulator:
         self.loc_range = loc_range
         self.scale_range = scale_range
         self.asymmetry_range = asymmetry_range
+        self.baseline_drift_magnitude = baseline_drift_magnitude
 
         if noise_type == 'white':
             self.apply_baseline_noise = apply_white_noise
@@ -104,6 +117,8 @@ class Simulator:
         areas = np.zeros([0], dtype='float32')
 
         # Generate (noise-free) chromatogram
+        #x = np.linspace(0, 1, self.resolution)
+        #resolution = np.random.randint(4096, 32768) # EXPERIMENTAL
         x = np.linspace(0, 1, self.resolution)
         chromatogram = np.zeros_like(x)
         for ampl, loc, scale, assym in zip(amplitudes, locs, scales, asymmetries):
@@ -115,7 +130,10 @@ class Simulator:
         chromatogram = self.apply_baseline_noise(chromatogram, amplitudes, snr)
 
         # Apply baseline drift to chromatogram
-        chromatogram = apply_baseline_drift(chromatogram, self.resolution)
+        chromatogram = apply_baseline_drift(
+            chromatogram, self.resolution, self.baseline_drift_magnitude)
+
+        #chromatogram = apply_interpolation(chromatogram, self.resolution) # EXPERIMENTAL
 
         return {
             'chromatogram': chromatogram,

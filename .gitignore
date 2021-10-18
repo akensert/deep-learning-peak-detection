@@ -1,5 +1,6 @@
 *.xlsx
 *.csv
+*.CSV
 
 # jupyter
 MANIFEST

@@ -13,14 +13,15 @@ def rescale_deriv(x_deriv):
 
     return x_deriv / np.max(np.abs(x_deriv))
 
-def find_peaks(x_deriv, height=0.05, distance=None, width=[16, 100]):
+def find_peaks(x_deriv, height=0.01, distance=None, width=[16, None]):
     '''
     Local minima search with scipy's find_peaks
     '''
     # use scipy's find_peaks to find local minima. Parameters probably
     # need some optimization.
-    loc = scipy.signal.find_peaks(
-        -x_deriv, height=height, distance=distance, width=width, rel_height=0.5)[0]
+    output = scipy.signal.find_peaks(
+        -x_deriv, height=height, distance=distance, width=width, rel_height=0.5)
+    loc = output[0]
     # remove local minima which is above 0 (perhaps this has to be modified)
     keep_idx = np.where(x_deriv[loc] <= 0)[0]
     return loc[keep_idx]
