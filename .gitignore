@@ -1,6 +1,4 @@
 *.xlsx
-*.csv
-*.CSV
 *.h5
 *.h5py
 
