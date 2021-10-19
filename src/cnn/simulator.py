@@ -55,17 +55,25 @@ def apply_baseline_drift(chromatogram, resolution, multiplier_range):
         baseline_drift += sigmoid(x, a, b, multiplier) / n
     return chromatogram + baseline_drift
 
+def trunc_norm(loc, scale, minimum, maximum, size):
+    values = np.zeros(size)
+    logical_test = values.copy().astype(bool)
+    while not np.all(logical_test):
+        logical_test = np.logical_and((minimum < values), (values < maximum))
+        values = np.where(logical_test, values, scale * np.random.randn(size) + loc)
+    return values
+
 
 class Simulator:
 
     def __init__(
         self,
         resolution=16384,
-        num_peaks_range=(10, 100),
-        snr_range=(3.0, 45.0),
+        num_peaks_range=(5, 100),
+        snr_range=(3.0, 100.0),
         amplitude_range=(5, 250),
         loc_range=(0.05, 0.95),
-        scale_range=(0.001, 0.004),
+        scale_range=(0.001, 0.005),
         asymmetry_range=(-0.15, 0.15),
         baseline_drift_magnitude=(-300, 300),
         noise_type='white',
@@ -101,8 +109,17 @@ class Simulator:
         num_peaks = np.random.randint(*self.num_peaks_range)
         amplitudes = np.random.uniform(*self.amplitude_range, size=(num_peaks,))
         locs = np.random.uniform(*self.loc_range, size=(num_peaks,))
-        scales = np.random.uniform(*self.scale_range, size=(num_peaks,))
-        snr = np.random.uniform(*self.snr_range)
+
+
+        scale_loc = np.random.uniform(*self.scale_range)
+        scales = trunc_norm(scale_loc,    # mean
+                            scale_loc/10, # std
+                            scale_loc - scale_loc/10 * 3, # min (mean - 3std)
+                            scale_loc + scale_loc/10 * 3, # max (mean + 3std)
+                            num_peaks # size
+                            )
+
+        snr = 10**np.random.uniform(np.log10(snr_range[0]), np.log10(snr_range[1]))
         asymmetries = np.random.uniform(*self.asymmetry_range, size=(num_peaks,))
         areas = np.zeros([0], dtype='float32')
 

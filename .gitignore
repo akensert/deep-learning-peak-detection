@@ -1,6 +1,7 @@
 *.xlsx
 *.h5
 *.h5py
+*.png
 
 # jupyter
 MANIFEST
