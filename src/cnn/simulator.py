@@ -55,7 +55,7 @@ def apply_baseline_drift(chromatogram, resolution, multiplier_range):
         baseline_drift += sigmoid(x, a, b, multiplier) / n
     return chromatogram + baseline_drift
 
-def trunc_norm(loc, scale, minimum, maximum, size):
+def random_truncated_normal(loc, scale, minimum, maximum, size):
     values = np.zeros(size)
     logical_test = values.copy().astype(bool)
     while not np.all(logical_test):
@@ -63,19 +63,25 @@ def trunc_norm(loc, scale, minimum, maximum, size):
         values = np.where(logical_test, values, scale * np.random.randn(size) + loc)
     return values
 
+def random_logarithmic_uniform(minimum, maximum, size=None):
+    return 10 ** np.random.uniform(np.log10(minimum), np.log10(maximum), size=size)
+
+def random_logarithmic_randint(minimum, maximum, size=None):
+    return np.round(random_logarithmic_uniform(minimum, maximum, size)).astype(int)
+
 
 class Simulator:
 
     def __init__(
         self,
         resolution=16384,
-        num_peaks_range=(5, 100),
-        snr_range=(3.0, 100.0),
-        amplitude_range=(5, 250),
+        num_peaks_range=(10, 100),
+        snr_range=(1.0, 100.0),
+        amplitude_range=(10, 100),
         loc_range=(0.05, 0.95),
         scale_range=(0.001, 0.005),
         asymmetry_range=(-0.15, 0.15),
-        baseline_drift_magnitude=(-300, 300),
+        baseline_drift_magnitude=(-500, 500),
         noise_type='white',
     ):
         self.resolution = resolution
@@ -106,21 +112,22 @@ class Simulator:
         np.random.seed(random_seed)
 
         # Randomly obtain parameters of the peaks
-        num_peaks = np.random.randint(*self.num_peaks_range)
-        amplitudes = np.random.uniform(*self.amplitude_range, size=(num_peaks,))
-        locs = np.random.uniform(*self.loc_range, size=(num_peaks,))
+        num_peaks = random_logarithmic_randint(*self.num_peaks_range)
 
+        amplitudes = random_logarithmic_uniform(*self.amplitude_range, size=num_peaks)
+
+        locs = np.random.uniform(*self.loc_range, size=num_peaks)
 
         scale_loc = np.random.uniform(*self.scale_range)
-        scales = trunc_norm(scale_loc,    # mean
-                            scale_loc/10, # std
-                            scale_loc - scale_loc/10 * 3, # min (mean - 3std)
-                            scale_loc + scale_loc/10 * 3, # max (mean + 3std)
-                            num_peaks # size
-                            )
-
-        snr = 10**np.random.uniform(np.log10(snr_range[0]), np.log10(snr_range[1]))
-        asymmetries = np.random.uniform(*self.asymmetry_range, size=(num_peaks,))
+        scales = random_truncated_normal(
+            scale_loc,    # mean
+            scale_loc/10, # std
+            scale_loc - scale_loc/10 * 3, # min (mean - 3std)
+            scale_loc + scale_loc/10 * 3, # max (mean + 3std)
+            num_peaks # size
+        )
+        snr = random_logarithmic_uniform(*self.snr_range)
+        asymmetries = np.random.uniform(*self.asymmetry_range, size=num_peaks)
         areas = np.zeros([0], dtype='float32')
 
         # Generate (noise-free) chromatogram
@@ -140,11 +147,13 @@ class Simulator:
         chromatogram = apply_baseline_drift(
             chromatogram, self.resolution, self.baseline_drift_magnitude)
 
+        rescale = random_logarithmic_uniform(0.05, 5.0)
+
         #chromatogram = apply_interpolation(chromatogram, self.resolution) # EXPERIMENTAL
         return {
-            'chromatogram': chromatogram,
+            'chromatogram': chromatogram * rescale,
             'loc': locs,
             'scale': scales,
-            'amplitude': amplitudes,
-            'area': areas,
+            'amplitude': amplitudes * rescale,
+            'area': areas * rescale,
         }
