@@ -32,7 +32,7 @@ class DataGenerator(tf.keras.utils.Sequence):
             index * self.batch_size: (1 + index) * self.batch_size
         ]
         x_batch, y_batch = [], []
-        for data in self.simulator.sample(batch_indices):
+        for data in self.simulator.sample_batch(batch_indices):
             y = self.label_encoder.encode(data['loc'], data['area'])
             x = data['chromatogram'][:, None]
             x_batch.append(x)

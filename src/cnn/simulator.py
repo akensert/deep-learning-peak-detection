@@ -75,13 +75,13 @@ class Simulator:
     def __init__(
         self,
         resolution=16384,
-        num_peaks_range=(10, 100),
-        snr_range=(1.0, 100.0),
-        amplitude_range=(10, 100),
+        num_peaks_range=(20, 100),
+        snr_range=(3.0, 50.0),
+        amplitude_range=(1, 20),
         loc_range=(0.05, 0.95),
-        scale_range=(0.001, 0.005),
+        scale_range=(0.001, 0.003),
         asymmetry_range=(-0.15, 0.15),
-        baseline_drift_magnitude=(-500, 500),
+        baseline_drift_magnitude=(-5, 5),
         noise_type='white',
     ):
         self.resolution = resolution
@@ -101,13 +101,13 @@ class Simulator:
             raise ValueError(f"noise_type '{noise_type}' not in list of " +
                               "available noise types: ['white', 'pink']")
 
-    def sample(self, indices, verbose=0):
+    def sample_batch(self, indices, verbose=0):
         if verbose:
             indices = tqdm(indices)
         for i in indices:
-            yield self._generate(i)
+            yield self._generate_example(i)
 
-    def _generate(self, random_seed):
+    def _generate_example(self, random_seed):
 
         np.random.seed(random_seed)
 
@@ -147,13 +147,13 @@ class Simulator:
         chromatogram = apply_baseline_drift(
             chromatogram, self.resolution, self.baseline_drift_magnitude)
 
-        rescale = random_logarithmic_uniform(0.05, 5.0)
-
+        rescale = chromatogram.max()#random_logarithmic_uniform(0.05, 5.0)
+        #rescale
         #chromatogram = apply_interpolation(chromatogram, self.resolution) # EXPERIMENTAL
         return {
-            'chromatogram': chromatogram * rescale,
+            'chromatogram': chromatogram / rescale,
             'loc': locs,
             'scale': scales,
-            'amplitude': amplitudes * rescale,
-            'area': areas * rescale,
+            'amplitude': amplitudes / rescale,
+            'area': areas / rescale * 1000,
         }
