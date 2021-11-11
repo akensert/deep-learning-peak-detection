@@ -27,6 +27,16 @@ class DataGenerator(tf.keras.utils.Sequence):
         if self.shuffle:
             np.random.shuffle(self.indices)
 
+    @staticmethod
+    def _preprocess(x, y=None):
+        x = x[:, None]
+        max_val = x.max()
+        if y is not None:
+            y[:, -1] /= max_val
+            y[:, -1] *= 2000
+            return x / max_val, y
+        return x / max_val
+
     def __getitem__(self, index):
         batch_indices = self.indices[
             index * self.batch_size: (1 + index) * self.batch_size
@@ -34,7 +44,8 @@ class DataGenerator(tf.keras.utils.Sequence):
         x_batch, y_batch = [], []
         for data in self.simulator.sample_batch(batch_indices):
             y = self.label_encoder.encode(data['loc'], data['area'])
-            x = data['chromatogram'][:, None]
+            x = data['chromatogram']
+            x, y = self._preprocess(data['chromatogram'], y)
             x_batch.append(x)
             y_batch.append(y)
 

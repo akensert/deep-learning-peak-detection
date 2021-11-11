@@ -69,21 +69,32 @@ def random_logarithmic_uniform(minimum, maximum, size=None):
 def random_logarithmic_randint(minimum, maximum, size=None):
     return np.round(random_logarithmic_uniform(minimum, maximum, size)).astype(int)
 
+def apply_interpolation(y, target_size):
+    '''
+    Resizes a chromatogram to a given size/resolution
+    '''
+    x = np.linspace(0, 1, len(y))
+    f = scipy.interpolate.interp1d(x, y)
+    xnew = np.linspace(0, 1, target_size)
+    ynew = f(xnew)
+    return ynew
 
 class Simulator:
 
     def __init__(
         self,
+        label_encoder,
         resolution=16384,
-        num_peaks_range=(20, 100),
-        snr_range=(3.0, 50.0),
-        amplitude_range=(1, 20),
+        num_peaks_range=(10, 200),
+        snr_range=(3.0, 100.0),
+        amplitude_range=(2, 20),
         loc_range=(0.05, 0.95),
-        scale_range=(0.001, 0.003),
+        scale_range=(0.002, 0.005),
         asymmetry_range=(-0.15, 0.15),
         baseline_drift_magnitude=(-5, 5),
         noise_type='white',
     ):
+        self.label_encoder = label_encoder
         self.resolution = resolution
         self.num_peaks_range = num_peaks_range
         self.snr_range = snr_range
@@ -114,26 +125,53 @@ class Simulator:
         # Randomly obtain parameters of the peaks
         num_peaks = random_logarithmic_randint(*self.num_peaks_range)
 
-        amplitudes = random_logarithmic_uniform(*self.amplitude_range, size=num_peaks)
+        # amplitudes_loc = random_logarithmic_uniform(*self.amplitude_range)
+        #
+        # amplitudes = random_truncated_normal(
+        #     amplitudes_loc,    # mean
+        #     amplitudes_loc/4, # std
+        #     amplitudes_loc - amplitudes_loc/4 * 3, # min (mean - 3std)
+        #     amplitudes_loc + amplitudes_loc/4 * 3, # max (mean + 3std)
+        #     num_peaks # size
+        # )
 
         locs = np.random.uniform(*self.loc_range, size=num_peaks)
+        locs = np.sort(locs)
+
+        # locs_ = (locs * self.resolution).round().astype(int)
+        # diff_ = np.diff(locs_)
+        # keep_idx_ = np.where(diff_ >= 32)[0]
+        # locs = locs[keep_idx_]
+        # num_peaks -= (num_peaks - len(locs))
+
+        #amplitudes = np.random.uniform(*self.amplitude_range, size=num_peaks)
+        amplitudes = np.random.uniform(*self.amplitude_range, size=num_peaks)
 
         scale_loc = np.random.uniform(*self.scale_range)
         scales = random_truncated_normal(
             scale_loc,    # mean
-            scale_loc/10, # std
-            scale_loc - scale_loc/10 * 3, # min (mean - 3std)
-            scale_loc + scale_loc/10 * 3, # max (mean + 3std)
+            scale_loc/8, # std
+            scale_loc - scale_loc/8 * 3, # min (mean - 3std)
+            scale_loc + scale_loc/8 * 3, # max (mean + 3std)
             num_peaks # size
         )
+        #scales *= 1 + locs * np.random.uniform(1, 2)
+
+
+        #scales = np.random.uniform(*self.scale_range, size=num_peaks)
+
         snr = random_logarithmic_uniform(*self.snr_range)
         asymmetries = np.random.uniform(*self.asymmetry_range, size=num_peaks)
         areas = np.zeros([0], dtype='float32')
 
+        locs, scales, amplitudes, asymmetries = self.label_encoder.remove_collision(
+            locs, scales, amplitudes, asymmetries
+        )
+
         # Generate (noise-free) chromatogram
-        #x = np.linspace(0, 1, self.resolution)
-        #resolution = np.random.randint(4096, 32768) # EXPERIMENTAL
+        #self.resolution = 6000
         x = np.linspace(0, 1, self.resolution)
+        #np.random.randint(4096, 32768) # EXPERIMENTAL
         chromatogram = np.zeros_like(x)
         for ampl, loc, scale, assym in zip(amplitudes, locs, scales, asymmetries):
             peak = asymmetrical_gaussian_peak(x, ampl, loc, scale, assym)
@@ -147,13 +185,12 @@ class Simulator:
         chromatogram = apply_baseline_drift(
             chromatogram, self.resolution, self.baseline_drift_magnitude)
 
-        rescale = chromatogram.max()#random_logarithmic_uniform(0.05, 5.0)
-        #rescale
-        #chromatogram = apply_interpolation(chromatogram, self.resolution) # EXPERIMENTAL
+        #rescale = chromatogram.max()
+        #chromatogram = apply_interpolation(chromatogram, 16384) # EXPERIMENTAL
         return {
-            'chromatogram': chromatogram / rescale,
+            'chromatogram': chromatogram,
             'loc': locs,
             'scale': scales,
-            'amplitude': amplitudes / rescale,
-            'area': areas / rescale * 1000,
+            'amplitude': amplitudes,
+            'area': areas,
         }

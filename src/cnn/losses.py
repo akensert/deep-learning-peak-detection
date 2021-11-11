@@ -31,17 +31,17 @@ class CustomLoss(tf.keras.losses.Loss):
         mask = tf.math.equal(true_prob, 1.)
 
         # Compute loss for all instances
-        bce_loss_1 = tf.keras.losses.BinaryCrossentropy()(true_prob, pred_prob)
+        prob_loss = tf.keras.losses.BinaryCrossentropy()(true_prob, pred_prob)
         # Compute loss only for instances in mask
-        bce_loss_2 = tf.keras.losses.BinaryCrossentropy()(
+        loc_loss = tf.keras.losses.BinaryCrossentropy()(
             tf.boolean_mask(true_loc, mask), tf.boolean_mask(pred_loc, mask))
-        huber_loss_1 = tf.keras.losses.MeanAbsoluteError()(
+        area_loss = tf.keras.losses.MeanAbsoluteError()(#MeanRelativeError()(
             tf.boolean_mask(true_area, mask), tf.boolean_mask(pred_area, mask))
 
         return (
-            bce_loss_1 * self.weight_prob +
-            bce_loss_2 * self.weight_loc +
-            huber_loss_1 * self.weight_area
+            prob_loss * self.weight_prob +
+            loc_loss * self.weight_loc +
+            area_loss * self.weight_area
         )
 
 class MeanRelativeError(tf.keras.losses.Loss):

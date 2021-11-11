@@ -2,6 +2,7 @@
 *.h5
 *.h5py
 *.png
+*.CSV
 
 # jupyter
 MANIFEST
