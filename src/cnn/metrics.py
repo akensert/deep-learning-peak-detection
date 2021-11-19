@@ -18,3 +18,6 @@ class CustomAUC(tf.keras.metrics.Metric):
 
     def reset_states(self):
         self.auc.reset_states()
+
+
+# CustomMRE (for peak area)

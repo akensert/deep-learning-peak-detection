@@ -33,7 +33,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         max_val = x.max()
         if y is not None:
             y[:, -1] /= max_val
-            y[:, -1] *= 2000
+            y[:, -1] *= 600
             return x / max_val, y
         return x / max_val
 

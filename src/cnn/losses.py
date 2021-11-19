@@ -35,7 +35,7 @@ class CustomLoss(tf.keras.losses.Loss):
         # Compute loss only for instances in mask
         loc_loss = tf.keras.losses.BinaryCrossentropy()(
             tf.boolean_mask(true_loc, mask), tf.boolean_mask(pred_loc, mask))
-        area_loss = tf.keras.losses.MeanAbsoluteError()(#MeanRelativeError()(
+        area_loss = MeanRelativeError()(
             tf.boolean_mask(true_area, mask), tf.boolean_mask(pred_area, mask))
 
         return (

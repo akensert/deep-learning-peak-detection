@@ -4,36 +4,44 @@ from tensorflow.keras import layers
 from .activations import CustomActivation
 
 
-def conv_block(x, filters, kernel_size, activation='relu', dropout=0.1,
-               num_conv_layers=1, pool_type='max', batch_norm=True):
+def conv_block(inputs, filters, kernel_size, activation='relu', dropout=0.1,
+               num_conv_layers=1, pool_type='conv', batch_norm=True):
 
+    x = inputs
     for _ in range(num_conv_layers):
-        x = layers.Conv1D(filters, kernel_size, padding='same')(x)
-        x = layers.Activation(activation)(x)
 
-        if batch_norm:
-            x = layers.BatchNormalization()(x)
+        x = layers.Conv1D(filters, kernel_size, strides=1, padding='same')(x)
+        x = layers.BatchNormalization()(x)
+        x = layers.Activation(activation)(x)
 
         if isinstance(dropout, float):
             x = layers.SpatialDropout1D(dropout)(x)
 
-    if pool_type is None:
-        return x
+    if pool_type:
+        if str(pool_type).lower().startswith('conv'):
+            x1 = layers.Conv1D(filters, kernel_size, strides=2, padding='same')(x)
+            x1 = layers.BatchNormalization()(x1)
+            x2 = layers.Conv1D(filters, kernel_size, strides=2, padding='same')(inputs)
+            x2 = layers.BatchNormalization()(x2)
+            x = layers.Add()([x1, x2])
+            x = layers.Activation(activation)(x)
+        if str(pool_type).lower().startswith('max'):
+            x = layers.MaxPool1D()(x)
+        elif str(pool_type).lower().startswith(('mean', 'average', 'avg')):
+            x = layers.AvgPool1D()(x)
 
-    if pool_type.lower().startswith('max'):
-        x = layers.MaxPool1D()(x)
-    elif pool_type.lower().startswith(('mean', 'average', 'avg')):
-        x = layers.AveragePool1D()(x)
+    if isinstance(dropout, float):
+        x = layers.SpatialDropout1D(dropout)(x)
 
     return x
-
 
 def ConvNet(
     filters=[128, 128, 256, 256, 512],
     kernel_sizes=[9, 9, 9, 9, 9],
     pool_type='max',
-    input_shape=(16384, 1),
-    output_shape=(512, 3)
+    conv_block_size=2,
+    input_shape=(8192, 1),
+    output_shape=(256, 3)
 ):
 
     if input_shape[0] % output_shape[0] != 0:
@@ -46,7 +54,8 @@ def ConvNet(
 
     x = inputs
     for i, (filt, kernel_size) in enumerate(zip(filters, kernel_sizes)):
-        x = conv_block(x, filt, kernel_size, num_conv_layers=1, pool_type=pool_type)
+        x = conv_block(x, filt, kernel_size,
+                       num_conv_layers=conv_block_size, pool_type=pool_type)
 
         if x.shape[1] < output_shape[0]:
             raise ValueError(
