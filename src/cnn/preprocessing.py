@@ -1,4 +1,5 @@
 import numpy as np
+import tensorflow as tf
 
 
 class LabelEncoder:
@@ -10,17 +11,19 @@ class LabelEncoder:
         self.window_centers = self.window_borders[1:] - self.window_size / 2
         self.num_classes = 3
 
-    def remove_collision(self, locs, scales, amplitudes, asymmetries):
+    def remove_collision(self, locs, s0, s1, s2, amplitudes):
         keep = []
         occupied = np.zeros(self.num_windows)
         for i, loc in enumerate(locs):
             dist = loc - self.window_centers
             index = np.argmin(np.abs(dist))
+            rel_loc = 0.5 + dist[index] / self.window_size
             if occupied[index] == 0:
                 keep.append(i)
                 occupied[index] = 1
+                #occupied[index-2: index+2] = 1
         keep = np.array(keep)
-        return locs[keep], scales[keep], amplitudes[keep], asymmetries[keep]
+        return locs[keep], s0[keep], s1[keep], s2[keep], amplitudes[keep]
 
     def encode(self, locs, areas):
         labels = np.zeros((self.num_windows, self.num_classes))

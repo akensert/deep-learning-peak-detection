@@ -1,9 +1,20 @@
 *.xlsx
-*.h5
 *.h5py
 *.png
-*.CSV
-*.xlsx
+
+notebooks/_*.ipynb
+notebooks/_*.py
+
+input/ISO10*
+input/ISO40
+input/OLD_AE_DATA*
+input/ISO30
+input/ISO40_mixed
+input/ISO30B_mixed
+input/chrom_1/GRA*
+notebooks/output/Figure*
+notebooks/output/weights/*
+!notebooks/output/weights/cnn_weights.h5
 
 # jupyter
 MANIFEST

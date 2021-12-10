@@ -33,14 +33,16 @@ class DataGenerator(tf.keras.utils.Sequence):
         max_val = x.max()
         if y is not None:
             y[:, -1] /= max_val
-            y[:, -1] *= 600
+            y[:, -1] *= 600   # scale area to a 600 second long run
             return x / max_val, y
         return x / max_val
 
     def __getitem__(self, index):
+
         batch_indices = self.indices[
             index * self.batch_size: (1 + index) * self.batch_size
         ]
+
         x_batch, y_batch = [], []
         for data in self.simulator.sample_batch(batch_indices):
             y = self.label_encoder.encode(data['loc'], data['area'])
