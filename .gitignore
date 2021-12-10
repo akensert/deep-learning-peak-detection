@@ -15,6 +15,7 @@ input/chrom_1/GRA*
 notebooks/output/Figure*
 notebooks/output/weights/*
 !notebooks/output/weights/cnn_weights.h5
+notebooks/_*
 
 # jupyter
 MANIFEST
