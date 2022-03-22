@@ -21,7 +21,6 @@ class LabelEncoder:
             if occupied[index] == 0:
                 keep.append(i)
                 occupied[index] = 1
-                #occupied[index-2: index+2] = 1
         keep = np.array(keep)
         return locs[keep], s0[keep], s1[keep], s2[keep], amplitudes[keep]
 

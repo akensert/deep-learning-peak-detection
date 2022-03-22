@@ -1,6 +1,7 @@
 *.xlsx
 *.h5py
 *.png
+*.zip
 
 notebooks/_*.ipynb
 notebooks/_*.py
@@ -12,6 +13,8 @@ input/ISO30
 input/ISO40_mixed
 input/ISO30B_mixed
 input/chrom_1/GRA*
+input/GRA
+input/ISO30B_240
 notebooks/output/Figure*
 notebooks/output/weights/*
 !notebooks/output/weights/cnn_weights.h5

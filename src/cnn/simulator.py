@@ -8,7 +8,7 @@ def gaussian_peak(x, amplitude, loc, scale):
     return amplitude * np.exp((-(x - loc)**2) / (2 * scale**2))
 
 def asymmetrical_gaussian_peak(x, amplitude, loc, s0, s1, s2=0.0, eps=1e-7):
-    # assymetrical_gaussian_peak(..., assymetry=0) is the same as gaussian_peak(...)
+    # assymetrical_gaussian_peak(..., s1=0) is the same as gaussian_peak(...)
     # add additional asymmetries by adding to the denominator inside np.exp:
     #   s0 + s1*(x-loc) + s2*(x-loc)**2 ..., sN*(x-loc)**N
 
