@@ -1,4 +1,4 @@
-# Deep learning models for peak detection in chromatograms
+# A deep learning model for peak detection in chromatograms
 
 ## Requirements
 * Python ~= 3.8
