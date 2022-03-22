@@ -6,15 +6,8 @@
 notebooks/_*.ipynb
 notebooks/_*.py
 
-input/ISO10*
-input/ISO40
-input/OLD_AE_DATA*
-input/ISO30
-input/ISO40_mixed
-input/ISO30B_mixed
-input/chrom_1/GRA*
-input/GRA
-input/ISO30B_240
+input/*
+!input/examples
 notebooks/output/Figure*
 notebooks/output/weights/*
 !notebooks/output/weights/cnn_weights.h5
